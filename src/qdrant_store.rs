@@ -40,7 +40,7 @@ pub struct RetrievedChunk{
 #[derive(Clone)]
 pub struct QdrantStore{
     client: Qdrant,
-    routeai_client: OpenRouterAiClient,
+    openrouter_client: OpenRouterAiClient,
     collection_name: String
 }
 
@@ -62,11 +62,11 @@ impl QdrantStore{
                 .build()
                 .context("Falied to create Qdrant client")?;
 
-        let routeai_client = OpenRouterAiClient::from_env()?;
+        let openrouter_client = OpenRouterAiClient::from_env()?;
 
         Ok(Self{
             client,
-            routeai_client,
+            openrouter_client,
             collection_name: collection_name.to_string()
         })
     }
@@ -116,7 +116,7 @@ impl QdrantStore{
             return Ok(0)
         }
 
-        let embedding_model = self.routeai_client.embedding_model(EMBEDDING_MODEL);
+        let embedding_model = self.openrouter_client.embedding_model(EMBEDDING_MODEL);
         let mut builder = EmbeddingsBuilder::new(embedding_model);
         
         for chunk in chunks {
@@ -170,7 +170,7 @@ impl QdrantStore{
     pub async fn search(&self, question: &str, top_k: usize) -> Result<Vec<RetrievedChunk>>{
 
         let embedding_model = self
-            .routeai_client
+            .openrouter_client
             .embedding_model(EMBEDDING_MODEL);
 
         let query = QueryPointsBuilder::new(&self.collection_name)
