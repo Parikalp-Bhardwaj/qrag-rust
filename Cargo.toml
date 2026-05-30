@@ -1,0 +1,33 @@
+[package]
+name = "qrag-rust"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "qrag-rust"
+path = "src/main.rs"
+
+[[bin]]
+name = "chat"
+path = "src/bin/chat.rs"
+
+
+[dependencies]
+anyhow = "1.0.102"
+rig = "0.37.0"
+
+tokio = { version = "1", features = ["full"] }
+
+tonic = "0.12"
+prost = "0.13"
+rig-qdrant = "0.2"
+qdrant-client = "1"
+dotenvy = "0.15"
+uuid = { version = "1", features = ["v4"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tonic-build = "0.12"

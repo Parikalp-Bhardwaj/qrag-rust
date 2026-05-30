@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package rag;
+
+service RagService{
+    rpc AskQuestion(AskQuestionRequest) returns (AskQuestionResponse);
+    rpc Reindex(ReindexRequest) returns (ReindexResponse);
+}
+
+message AskQuestionRequest{
+    string question = 1;
+}
+
+message AskQuestionResponse{
+    string answer = 1;
+    repeated Source sources = 2;
+}
+
+message Source{
+    string file_path = 1;
+    uint32 chunks_indexed = 2;
+    string preview = 3;
+    float score = 4;
+}
+
+message ReindexRequest{}
+
+message ReindexResponse{
+    uint64 chunks_indexed = 1;
+    string message = 2;
+}
