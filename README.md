@@ -54,6 +54,7 @@ qrag-rust/
 │   ├── grpc.md
 │   ├── rust.md
 │   └── tokio.md
+|   └── Rust-for-Network-Programming-and-Automation.pdf
 └── src/
     ├── main.rs              # boots the gRPC server
     ├── config.rs            # env-var configuration
