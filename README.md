@@ -371,7 +371,6 @@ In rough order of payoff:
 | PDF text extraction | `pdftotext` (poppler) |
 
 ---
-
 ## 🤝 Contributing
 
 Pull requests welcome. For larger changes, open an issue first to discuss.
