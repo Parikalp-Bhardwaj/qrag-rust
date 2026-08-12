@@ -370,18 +370,6 @@ In rough order of payoff:
 | Models | `openai/text-embedding-3-small`, `openai/gpt-4o-mini` |
 | PDF text extraction | `pdftotext` (poppler) |
 
----
-## 🤝 Contributing
-
-Pull requests welcome. For larger changes, open an issue first to discuss.
-
-A few suggested first contributions if you're looking for something to tackle:
-
-- Better chunking strategy (open a PR with benchmarks against the current word-count chunker)
-- Add an HTTP `/ask` endpoint alongside gRPC
-- Replace `Cargo.toml` edition 2024 if you hit toolchain compatibility issues
-- Improve error messages around missing `pdftotext` or `OPENROUTER_API_KEY`
-
 
 
 Built to learn. Read the source, break it, fork it. That's where the understanding comes from. 🦀
