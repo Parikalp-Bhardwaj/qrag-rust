@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/qrag-core",
     "crates/qrag-server",
+     "crates/qrag-tui",
 ]
 
 [workspace.package]
@@ -25,3 +26,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+ratatui = "0.29"
+crossterm = { version = "0.28", features = ["event-stream"] }
+futures = "0.3"

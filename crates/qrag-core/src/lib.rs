@@ -9,4 +9,4 @@ pub mod rag;
 pub use config::Config;
 pub use llm::LlmService;
 pub use qdrant_store::{QdrantStore, RetrievedChunk};
-pub use rag::{RagAnswer, RagEngine};
+pub use rag::{RagAnswer, RagEngine, IndexStatus};
