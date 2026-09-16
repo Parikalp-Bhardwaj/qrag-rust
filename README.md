@@ -15,8 +15,10 @@ Built with **Qdrant** for vector search, **Rig** for the AI application layer, *
 - 🧠 Embeddings via OpenAI's `text-embedding-3-small` (1536-dim) through OpenRouter
 - 🔎 Vector search powered by Qdrant with cosine similarity
 - 💬 Grounded answers from `gpt-4o-mini` with explicit source attribution
+- ⚡ **Auto-indexes `./docs` on startup** when the collection is empty — no manual step on first run
 - 🚀 gRPC service exposing `AskQuestion` and `Reindex` endpoints
 - 🖥️ Terminal chat client that talks to the server over gRPC
+- 🧩 **Cargo workspace** — the RAG engine is a reusable `qrag-core` library
 - 🐳 One-command Qdrant via Docker Compose
 
 ---
@@ -25,7 +27,7 @@ Built with **Qdrant** for vector search, **Rig** for the AI application layer, *
 
 Two phases share a single `RagEngine`:
 
-**Indexing** (run once, or whenever docs change):
+**Indexing** (runs automatically on startup when the collection is empty; or on demand via `Reindex`):
 
 ```
 ./docs → load → chunk → embed (OpenRouter) → store (Qdrant)
@@ -43,29 +45,40 @@ The same embedding model is used on both sides — that's what makes vector dist
 
 ## 📂 Project layout
 
+The project is a **Cargo workspace**. The engine lives in a reusable library
+crate (`qrag-core`) so multiple frontends can share it; the gRPC server and
+chat client live in `qrag-server`.
+
 ```
 qrag-rust/
-├── Cargo.toml               # crate metadata + dependencies
-├── build.rs                 # compiles .proto → Rust at build time
-├── docker-compose.yaml      # Qdrant container
+├── Cargo.toml                   # workspace root + shared dependency versions
+├── docker-compose.yaml          # Qdrant container
 ├── proto/
-│   └── rag.proto            # gRPC service definition
-├── docs/                    # your knowledge base lives here
+│   └── rag.proto                # gRPC service definition
+├── docs/                        # your knowledge base lives here
 │   ├── grpc.md
 │   ├── rust.md
-│   └── tokio.md
-|   └── Rust-for-Network-Programming-and-Automation.pdf
-└── src/
-    ├── main.rs              # boots the gRPC server
-    ├── config.rs            # env-var configuration
-    ├── document_loader.rs   # reads .md, .txt, .pdf
-    ├── chunker.rs           # splits into ~120-word chunks
-    ├── qdrant_store.rs      # embeddings + vector storage
-    ├── llm.rs               # prompt + completion
-    ├── rag.rs               # orchestration
-    ├── grpc_service.rs      # tonic handlers
-    └── bin/
-        └── chat.rs          # terminal chat client
+│   ├── tokio.md
+│   └── Rust-for-Network-Programming-and-Automation.pdf
+└── crates/
+    ├── qrag-core/               # reusable RAG engine (library)
+    │   ├── Cargo.toml
+    │   └── src/
+    │       ├── lib.rs           # re-exports the public API
+    │       ├── config.rs        # env-var configuration
+    │       ├── document_loader.rs  # reads .md, .txt, .pdf
+    │       ├── chunker.rs       # splits into ~120-word chunks
+    │       ├── qdrant_store.rs  # embeddings + vector storage
+    │       ├── llm.rs           # prompt + completion
+    │       └── rag.rs           # orchestration (+ auto-index)
+    └── qrag-server/             # gRPC server + chat client
+        ├── Cargo.toml
+        ├── build.rs             # compiles .proto → Rust at build time
+        └── src/
+            ├── main.rs          # boots the gRPC server
+            ├── grpc_service.rs  # tonic handlers
+            └── bin/
+                └── chat.rs      # terminal chat client
 ```
 
 ---
@@ -168,25 +181,48 @@ The Qdrant dashboard is at **http://localhost:6333/dashboard**.
 
 ### 4. Add your documents
 
-Drop `.md`, `.txt`, or `.pdf` files into `./docs/`. The repo ships with three Rust notes to get you started.
+Drop `.md`, `.txt`, or `.pdf` files into `./docs/`. The repo ships with a few Rust notes to get you started.
 
 ### 5. Build and run the server
 
 ```bash
-cargo run --bin qrag-rust
+cargo run -p qrag-server --bin qrag-server
 ```
 
-You should see:
+On first run (empty collection) the server indexes `./docs` automatically, so you'll see something like:
 
 ```
 CodeRAG-rs gRPC server running on 127.0.0.1:50051
+auto-indexed 386 chunks from ./docs
+```
+
+On later runs, if the collection already has data it skips re-indexing:
+
+```
+index already populated with 386 chunks — skipping auto-index
 ```
 
 First build pulls a lot of crates and is slow. Subsequent builds are quick.
 
-### 6. Index your documents
+### 6. Ask a question
 
-In a second terminal:
+Because indexing happens automatically, you can ask right away. Interactive client:
+
+```bash
+cargo run -p qrag-server --bin chat
+```
+
+Or with `grpcurl`:
+
+```bash
+grpcurl -plaintext -d '{"question":"What is tokio?"}' \
+  -import-path proto -proto rag.proto \
+  127.0.0.1:50051 rag.RagService/AskQuestion
+```
+
+### 7. Re-index after adding documents (optional)
+
+Auto-index only runs when the collection is empty, so after adding new files to `./docs/` trigger a manual re-index:
 
 ```bash
 grpcurl -plaintext -d '{}' \
@@ -203,14 +239,6 @@ Response:
 }
 ```
 
-### 7. Ask a question
-
-```bash
-grpcurl -plaintext -d '{"question":"What is tokio?"}' \
-  -import-path proto -proto rag.proto \
-  127.0.0.1:50051 rag.RagService/AskQuestion
-```
-
 ---
 
 ## 💬 The chat client
@@ -218,12 +246,12 @@ grpcurl -plaintext -d '{"question":"What is tokio?"}' \
 For an interactive terminal experience, run the chat binary instead of `grpcurl`:
 
 ```bash
-cargo run --bin chat
+cargo run -p qrag-server --bin chat
 ```
 
 ```
 Connected to http://127.0.0.1:50051
-Type a question and press Enter. Commands: /reindex, /quit
+Type a question and press Enter. Commands: /quit
 
 you > what is tokio?
 
@@ -238,11 +266,10 @@ bot > Tokio is an asynchronous runtime for Rust that allows programs
 
 | Command | What it does |
 |---|---|
-| `/reindex` | Rebuilds the vector index from `./docs/` |
 | `/quit` or `/exit` | Exits the client |
 | `Ctrl-D` | Same as `/quit` |
 
-The server has to be running for the client to connect.
+The server has to be running for the client to connect. To refresh the index after changing documents, call the `Reindex` RPC (see Quick start step 7).
 
 ---
 
@@ -281,7 +308,7 @@ service RagService {
 
 ### `Reindex`
 
-Rebuilds the entire index from `./docs/`. Takes no parameters; returns the chunk count.
+Rebuilds the entire index from `./docs/`. Takes no parameters; returns the chunk count. The server also runs this automatically on startup when the collection is empty.
 
 ---
 
@@ -307,7 +334,7 @@ The `-v` flag matters: it deletes the `qdrant_data` volume. You need this after 
 
 ## ⚙️ Configuration deep dive
 
-All configuration is environment-driven. The relevant struct is in `src/config.rs`:
+All configuration is environment-driven. The relevant struct is in `crates/qrag-core/src/config.rs`:
 
 ```rust
 pub struct Config {
@@ -322,11 +349,11 @@ To change models or chunk sizes, edit the constants in code:
 
 | What | Where |
 |---|---|
-| Embedding model | `EMBEDDING_MODEL` in `src/qdrant_store.rs` |
-| Vector dimension | `VectorParamsBuilder::new(1536, ...)` in `src/qdrant_store.rs` |
-| LLM model | `.agent("openai/gpt-4o-mini")` in `src/llm.rs` |
-| Chunk size | `chunk_retrieve(load, 120)` in `src/rag.rs` |
-| Top-K retrieval | `self.qdrant_store.search(&question, 3)` in `src/rag.rs` |
+| Embedding model | `EMBEDDING_MODEL` in `crates/qrag-core/src/qdrant_store.rs` |
+| Vector dimension | `VectorParamsBuilder::new(1536, ...)` in `crates/qrag-core/src/qdrant_store.rs` |
+| LLM model | `.agent("openai/gpt-4o-mini")` in `crates/qrag-core/src/llm.rs` |
+| Chunk size | `chunk_retrieve(load, 120)` in `crates/qrag-core/src/rag.rs` |
+| Top-K retrieval | `self.qdrant_store.search(&question, 3)` in `crates/qrag-core/src/rag.rs` |
 
 If you change the embedding model, **also update the vector dimension** and run `docker compose down -v` to clear the old collection.
 
@@ -336,9 +363,10 @@ If you change the embedding model, **also update the vector dimension** and run 
 
 - **Vector dimension mismatch.** `text-embedding-3-small` is 1536-dim. Change one without the other and every upsert fails. Wipe the volume to recover.
 - **REST vs gRPC port.** Qdrant exposes REST on 6333 and gRPC on 6334. The Rust app needs 6334.
-- **PDFs need `pdftotext`.** If `poppler-utils` isn't installed, PDF documents are silently skipped with an error.
-- **First reindex is slow.** Hundreds of OpenRouter API calls. Expect 30-60 seconds for the included docs.
-- **`.env` is loaded from the current directory.** Always run `cargo` from the project root, not from `src/`.
+- **PDFs need `pdftotext`.** If `poppler-utils` isn't installed, PDF documents fail to load and startup auto-index logs a warning.
+- **Auto-index only runs when empty.** After adding new docs to `./docs/`, run the `Reindex` RPC — a restart alone won't pick them up if the collection already has data.
+- **First index is slow.** Hundreds of OpenRouter API calls. Expect 30-60 seconds for the included docs.
+- **`.env` is loaded from the current directory.** Always run `cargo` from the workspace root.
 
 ---
 
@@ -346,6 +374,8 @@ If you change the embedding model, **also update the vector dimension** and run 
 
 In rough order of payoff:
 
+- [ ] **ratatui TUI** — a rich terminal interface in a new `qrag-tui` crate
+- [ ] **File-watcher** — auto-reindex when files in `./docs` change
 - [ ] **Smarter chunking** — sentence-aware splits, sliding-window overlap, or semantic chunking
 - [ ] **Reranking** — pull top-20 from Qdrant, then use a cross-encoder to get top-3
 - [ ] **Hybrid retrieval** — combine vector search with BM25 keyword search
