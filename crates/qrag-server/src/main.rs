@@ -5,25 +5,16 @@ use tracing::info;
 
 
 use anyhow;
-mod document_loader;
-mod config;
-mod chunker;
-mod qdrant_store;
-mod llm;
-mod rag;
-mod grpc_service;
+use qrag_core::{Config, LlmService, QdrantStore, RagEngine};
 
+mod grpc_service;
 
 pub mod rag_proto {
     tonic::include_proto!("rag");
 }
 
 use crate::{
-    config::Config,
     grpc_service::RagGrpcService,
-    llm::LlmService,
-    qdrant_store::QdrantStore,
-    rag::RagEngine,
     rag_proto::rag_service_server::RagServiceServer,
 };
 

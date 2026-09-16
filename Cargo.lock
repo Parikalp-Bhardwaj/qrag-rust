@@ -5498,23 +5498,33 @@ dependencies = [
 ]
 
 [[package]]
-name = "qrag-rust"
+name = "qrag-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "dotenvy",
- "prost",
  "qdrant-client",
  "rig",
  "rig-qdrant",
  "serde",
  "serde_json",
  "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "qrag-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "prost",
+ "qrag-core",
+ "tokio",
  "tonic",
  "tonic-build",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
