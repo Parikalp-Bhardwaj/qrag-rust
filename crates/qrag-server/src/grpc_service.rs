@@ -1,8 +1,7 @@
-use crate::{
-    rag::RagEngine,
-    rag_proto::{AskQuestionRequest, AskQuestionResponse, ReindexRequest, ReindexResponse, Source, 
-        rag_service_server::RagService
-    }
+use qrag_core::RagEngine;
+use crate::rag_proto::{
+    AskQuestionRequest, AskQuestionResponse, ReindexRequest, ReindexResponse, Source,
+    rag_service_server::RagService,
 };
 
 use tonic::{Request, Response, Status};

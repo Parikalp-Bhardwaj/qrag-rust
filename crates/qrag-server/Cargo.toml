@@ -1,0 +1,26 @@
+[package]
+name = "qrag-server"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "qrag-server"
+path = "src/main.rs"
+
+[[bin]]
+name = "chat"
+path = "src/bin/chat.rs"
+
+[dependencies]
+qrag-core = { path = "../qrag-core" }
+
+anyhow.workspace = true
+tokio.workspace = true
+tonic.workspace = true
+prost.workspace = true
+dotenvy.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[build-dependencies]
+tonic-build.workspace = true
