@@ -1,13 +1,12 @@
 use anyhow::{Context, Result};
 use std::io::{self, BufRead, Write};
-// use tonic::transport::Channel;
 
 pub mod rag_proto {
     tonic::include_proto!("rag");
 }
 
 use rag_proto::{
-    rag_service_client::RagServiceClient, AskQuestionRequest, ReindexRequest,
+    rag_service_client::RagServiceClient, AskQuestionRequest,
 };
 
 #[tokio::main]
@@ -20,7 +19,7 @@ async fn main() -> Result<()> {
         .with_context(|| format!("could not reach RAG server at {addr} — is it running?"))?;
 
     println!("Connected to {addr}");
-    println!("Type a question and press Enter. Commands: /reindex, /quit");
+    println!("Type a question and press Enter. Commands: /quit");
     println!();
 
     let stdin = io::stdin();
@@ -46,17 +45,6 @@ async fn main() -> Result<()> {
         if q == "/quit" || q == "/exit" {
             break;
         }
-        if q == "/reindex" {
-            match client.reindex(ReindexRequest {}).await {
-                Ok(resp) => {
-                    let r = resp.into_inner();
-                    println!("indexed {} chunks — {}\n", r.chunks_indexed, r.message);
-                }
-                Err(e) => eprintln!("reindex failed: {}\n", e.message()),
-            }
-            continue;
-        }
-
         match client
             .ask_question(AskQuestionRequest {
                 question: q.to_string(),
