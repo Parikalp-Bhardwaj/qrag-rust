@@ -9,9 +9,9 @@ use anyhow::Result;
 
 #[derive(Clone)]
 pub struct RagEngine{
-    file_dir: String,
-    qdrant_store: QdrantStore,
-    llm: LlmService
+    pub file_dir: String,
+    pub qdrant_store: QdrantStore,
+    pub llm: LlmService
 }
 
 #[derive(Debug)]
@@ -20,6 +20,11 @@ pub struct RagAnswer{
     pub sources: Vec<RetrievedChunk>
 }
 
+#[derive(Debug)]
+pub enum IndexStatus {
+    AlreadyPopulated(u64),
+    Indexed(usize),
+}
 
 impl RagEngine{
     pub fn new(
@@ -47,17 +52,35 @@ impl RagEngine{
         Ok(indexed)
     }
 
-    pub async fn ask_question(&self, question: String) -> Result<RagAnswer>{
+    pub async fn ask_question(&self, question: String) -> Result<RagAnswer> {
         let chunk = self.qdrant_store.search(&question, 3).await?;
-        
-        let answer = self
-                .llm
-                .answer_question(&question, &chunk)
-                .await?;
 
-        Ok(RagAnswer { 
-            answer, 
-            sources: chunk 
-        })
+        let answer = self.llm
+            .answer_question_streamed(&question, &chunk, |_| {})
+            .await?;
+
+        Ok(RagAnswer { answer, sources: chunk })
+    }
+
+    pub async fn retrieve(&self, question: &str) -> Result<Vec<RetrievedChunk>> {
+        self.qdrant_store.search(question, 3).await
+    }
+
+    pub async fn answer_streamed(
+        &self,
+        question: &str,
+        chunks: &[RetrievedChunk],
+        on_token: impl FnMut(&str),
+    ) -> Result<String> {
+        self.llm.answer_question_streamed(question, chunks, on_token).await
+    }
+
+    pub async fn ensure_indexed(&self) -> Result<IndexStatus> {
+        let existing = self.qdrant_store.count_points().await?;
+        if existing > 0 {
+            return Ok(IndexStatus::AlreadyPopulated(existing));
+        }
+        let indexed = self.reindex_docs().await?;
+        Ok(IndexStatus::Indexed(indexed))
     }
 }

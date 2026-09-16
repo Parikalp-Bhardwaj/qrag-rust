@@ -9,6 +9,7 @@ use qdrant_client::{
         QueryPointsBuilder,
         UpsertPointsBuilder,
         VectorParamsBuilder,
+        CountPointsBuilder
     },
     Payload,
     Qdrant,
@@ -92,6 +93,19 @@ impl QdrantStore{
         Ok(())
     }
 
+    pub async fn count_points(&self) -> Result<u64> {
+        let resp = self
+            .client
+            .count(CountPointsBuilder::new(&self.collection_name).exact(true))
+            .await
+            .context("Failed to count points in Qdrant collection")?;
+        Ok(resp.result.map(|r| r.count).unwrap_or(0))
+    }
+
+    pub async fn is_empty(&self) -> Result<bool> {
+        Ok(self.count_points().await? == 0)
+    }
+
     pub async fn reset_collection(&self) -> Result<()>{
         let exists = self
                     .client
@@ -128,7 +142,6 @@ impl QdrantStore{
             })?;
         }
         
-
         let embedded_doc = builder
                             .build()
                             .await
@@ -139,8 +152,8 @@ impl QdrantStore{
                             .into_iter()
                             .map(|(doc, embeddings)| {
                                 let vector: Vec<f32> = embeddings
-                                    .first()        // OneOrMany<Embedding> -> Embedding
-                                    .vec            // Vec<f64>
+                                    .first()        
+                                    .vec        
                                     .iter()
                                     .map(|&value| value as f32)
                                     .collect();
@@ -222,13 +235,8 @@ impl QdrantStore{
             });
         }
         
-
-        
-
         Ok(chunk)
     }
 }
-
-
 
 

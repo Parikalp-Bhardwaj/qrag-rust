@@ -3,9 +3,12 @@ use crate::qdrant_store::RetrievedChunk;
 use anyhow::{Context, Result};
 use rig::{
     client::{CompletionClient, ProviderClient},
-    completion::Prompt,
-    providers::openrouter
+    agent::MultiTurnStreamItem,
+    providers::openrouter,
+    streaming::{StreamedAssistantContent, StreamingPrompt},
 };
+use futures::StreamExt;
+use crate::Config;
 
 #[derive(Clone)]
 pub struct LlmService{
@@ -20,16 +23,22 @@ impl LlmService{
 
     }
 
-    pub async fn answer_question(
-        &self,
+    pub async fn answer_question_streamed(
+       &self,
         question: &str,
         chunks: &[RetrievedChunk],
+        mut on_token: impl FnMut(&str),
         ) -> Result<String>{
         
-        if chunks.is_empty(){
-            return Ok(format!("could not find relevant content for: {}", question));
+        dotenvy::dotenv().ok();
+        if chunks.is_empty() {
+            let msg = format!("could not find relevant content for: {}", question);
+            on_token(&msg);
+            return Ok(msg);
         }
 
+        let config = Config::from_env();
+        let model = &config.model;
         let context = build_context(chunks);
 
         let prompt = format!(
@@ -58,16 +67,21 @@ impl LlmService{
 
         let agent = self
                     .client
-                    .agent("openai/gpt-4o-mini")
+                    // .agent("openai/gpt-4o-mini")
+                    .agent(model)
                     .preamble("You answer questions using retrieved chunks as grounded context.")
                     .build();
 
-        let respone = agent
-                                .prompt(prompt)
-                                .await
-                                .context("Failed to generate answer with Rig agent")?;
-
-        Ok(respone)
+        let mut stream = agent.stream_prompt(prompt).await;
+        let mut full = String::new();
+        while let Some(item) = stream.next().await {
+            let item = item.map_err(|e| anyhow::anyhow!("streaming failed: {e}"))?;
+            if let MultiTurnStreamItem::StreamAssistantItem(StreamedAssistantContent::Text(t)) = item {
+                full.push_str(&t.text);
+                on_token(&t.text);
+            }
+        }
+        Ok(full)
     }
 }
 

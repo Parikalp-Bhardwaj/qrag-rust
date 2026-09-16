@@ -1,0 +1,19 @@
+[package]
+name = "qrag-tui"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "qrag-tui"
+path=  "src/main.rs"
+
+
+[dependencies]
+qrag-core = { path = "../qrag-core" }
+
+anyhow.workspace = true
+tokio.workspace = true
+dotenvy.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+futures.workspace = true

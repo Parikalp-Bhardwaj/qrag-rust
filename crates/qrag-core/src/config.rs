@@ -6,7 +6,8 @@ pub struct Config{
     pub port: u16,
     // pub doc_dir: String,
     pub qdrant_url: String,
-    pub qdrant_collection: String
+    pub qdrant_collection: String,
+    pub model: String
 }
 
 impl Config{
@@ -28,8 +29,10 @@ impl Config{
             
 
             qdrant_collection: env::var("QDRANT_COLLECTION")
-                    .unwrap_or_else(|_|"question".to_string())
+                    .unwrap_or_else(|_|"question".to_string()),
 
+            model: env::var("MODEL")
+                    .unwrap_or_else(|_|"model".to_string())
         }
     }
 
