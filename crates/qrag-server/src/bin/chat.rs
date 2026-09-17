@@ -5,14 +5,11 @@ pub mod rag_proto {
     tonic::include_proto!("rag");
 }
 
-use rag_proto::{
-    rag_service_client::RagServiceClient, AskQuestionRequest,
-};
+use rag_proto::{AskQuestionRequest, rag_service_client::RagServiceClient};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let addr = std::env::var("RAG_SERVER")
-        .unwrap_or_else(|_| "http://127.0.0.1:50051".to_string());
+    let addr = std::env::var("RAG_SERVER").unwrap_or_else(|_| "http://127.0.0.1:50051".to_string());
 
     let mut client = RagServiceClient::connect(addr.clone())
         .await

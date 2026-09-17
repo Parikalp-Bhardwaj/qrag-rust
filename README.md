@@ -6,7 +6,7 @@ Built with **Qdrant** for vector search, **Rig** for the AI application layer, *
 
 > If you've ever wondered what's underneath `langchain.create_retrieval_chain(...)` — this project is the answer, written in readable Rust you can follow end to end.
 
-<!-- ![demo](docs/demo.gif)  -->
+![demo](docs/image.png) 
 
 ---
 

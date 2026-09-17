@@ -12,22 +12,22 @@ use crate::ui;
 pub enum Role {
     You,
     Bot,
-    System
+    System,
 }
 
-pub struct Message{
+pub struct Message {
     pub role: Role,
-    pub text: String
+    pub text: String,
 }
 
 /// Whether we're waiting on the engine.
 #[derive(Clone, Copy, PartialEq)]
-pub enum Status{
+pub enum Status {
     Idle,
-    Thinking
-} 
+    Thinking,
+}
 
-pub struct App{
+pub struct App {
     engine: RagEngine,
     pub input: String,
     pub messages: Vec<Message>,
@@ -35,12 +35,11 @@ pub struct App{
     pub status: Status,
     /// Lines scrolled *up* from the bottom (0 = pinned to newest).
     pub scroll: u16,
-    should_quit: bool
+    should_quit: bool,
 }
 
-
-impl App{
-    pub fn new(engine: RagEngine) -> Self{
+impl App {
+    pub fn new(engine: RagEngine) -> Self {
         Self {
             engine,
             input: String::new(),
@@ -57,12 +56,12 @@ impl App{
         }
     }
 
-    pub async fn run(mut self, ternimal: &mut DefaultTerminal) -> Result<()>{
+    pub async fn run(mut self, ternimal: &mut DefaultTerminal) -> Result<()> {
         let (tx, mut rx) = mpsc::channel::<Result<RagAnswer, String>>(8);
         let mut events = EventStream::new();
         loop {
             ternimal.draw(|frame| ui::render(frame, &self))?;
-            if self.should_quit{
+            if self.should_quit {
                 break;
             }
             tokio::select! {
@@ -75,7 +74,6 @@ impl App{
                     self.on_answer(answer);
                 }
             }
-
         }
         Ok(())
     }
@@ -114,7 +112,7 @@ impl App{
         });
         self.input.clear();
         self.status = Status::Thinking;
-        self.scroll = 0; 
+        self.scroll = 0;
 
         let engine = self.engine.clone();
         let tx = tx.clone();
@@ -147,4 +145,3 @@ impl App{
         }
     }
 }
-

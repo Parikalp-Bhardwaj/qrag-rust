@@ -11,6 +11,9 @@ path = "src/main.rs"
 name = "chat"
 path = "src/bin/chat.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
 qrag-core = { path = "../qrag-core" }
 
