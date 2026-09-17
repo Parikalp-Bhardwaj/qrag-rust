@@ -12,9 +12,9 @@ pub fn render(frame: &mut Frame, app: &App) {
     let root = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(1), 
-            Constraint::Min(1),    
-            Constraint::Length(3), 
+            Constraint::Length(1),
+            Constraint::Min(1),
+            Constraint::Length(3),
         ])
         .split(frame.area());
 
@@ -33,9 +33,7 @@ pub fn render(frame: &mut Frame, app: &App) {
 fn render_header(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
     let status = match app.status {
         Status::Idle => Span::styled("● ready", Style::default().fg(Color::Green)),
-        Status::Thinking => {
-            Span::styled("● thinking…", Style::default().fg(Color::Yellow))
-        }
+        Status::Thinking => Span::styled("● thinking…", Style::default().fg(Color::Yellow)),
     };
 
     let header = Paragraph::new(Line::from(vec![
@@ -59,11 +57,15 @@ fn render_chat(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
         let (prefix, style) = match m.role {
             Role::You => (
                 "you › ",
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
             ),
             Role::Bot => (
                 "bot › ",
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
             ),
             Role::System => ("· ", Style::default().fg(Color::DarkGray)),
         };
@@ -77,10 +79,10 @@ fn render_chat(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
         for cont in text_lines {
             lines.push(Line::from(format!("      {cont}")));
         }
-        lines.push(Line::from("")); 
+        lines.push(Line::from(""));
     }
 
-    let inner_height = area.height.saturating_sub(2); 
+    let inner_height = area.height.saturating_sub(2);
     let total = lines.len() as u16;
     let max_top = total.saturating_sub(inner_height);
     let offset = max_top.saturating_sub(app.scroll);
@@ -108,25 +110,23 @@ fn render_sources(frame: &mut Frame, app: &App, area: ratatui::layout::Rect) {
                     Line::from(vec![
                         Span::styled(
                             short_path(&s.file_path),
-                            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                            Style::default()
+                                .fg(Color::Cyan)
+                                .add_modifier(Modifier::BOLD),
                         ),
                         Span::styled(
                             format!("  {:.3}", s.score),
                             Style::default().fg(Color::Yellow),
                         ),
                     ]),
-                    Line::from(Span::styled(
-                        preview,
-                        Style::default().fg(Color::Gray),
-                    )),
+                    Line::from(Span::styled(preview, Style::default().fg(Color::Gray))),
                     Line::from(""),
                 ])
             })
             .collect()
     };
 
-    let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title(" Sources "));
+    let list = List::new(items).block(Block::default().borders(Borders::ALL).title(" Sources "));
     frame.render_widget(list, area);
 }
 

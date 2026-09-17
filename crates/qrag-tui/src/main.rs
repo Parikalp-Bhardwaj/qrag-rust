@@ -7,7 +7,7 @@ mod ui;
 use app::App;
 
 #[tokio::main]
-async fn main() -> Result<()>{
+async fn main() -> Result<()> {
     dotenvy::dotenv().ok();
 
     let config = Config::from_env();
@@ -30,4 +30,3 @@ async fn main() -> Result<()>{
 
     result
 }
-

@@ -10,6 +10,12 @@ members = [
 version = "0.1.0"
 edition = "2024"
 
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+result_large_err = "allow"
 
 [workspace.dependencies]
 anyhow = "1.0.102"
