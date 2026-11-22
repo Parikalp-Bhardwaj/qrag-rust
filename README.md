@@ -300,5 +300,4 @@ If you change the embedding model, **also update the vector dimension** and run 
 | PDF text extraction | `pdftotext` (poppler) |
 
 
-
 Built to learn. Read the source, break it, fork it. 🦀
